@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hotel Energy Command Board</title>
+  <script>
+    try { const t = localStorage.getItem("hecb-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/vendor/lenis.css">
+  <link rel="stylesheet" href="/static/css/style.css?v=4">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%236366f1' d='M13 2 4 14h7l-1 8 9-12h-7z'/></svg>">
+</head>
+<body>
+  <!-- Latar animasi -->
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+    <div class="grid-overlay"></div>
+  </div>
+  <div class="progress" aria-hidden="true"><span></span></div>
+
+  <!-- Navigasi -->
+  <header class="nav glass" id="nav">
+    <a class="brand" href="#exec" data-scroll>
+      <span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+      <span class="brand-text"><b>Command Board</b><small>Hotel Energy · Jakarta</small></span>
+    </a>
+    <nav class="links" id="links">
+      <span class="pill-indicator" id="pill"></span>
+      <a href="#exec" data-key="exec">Executive</a>
+      <a href="#quality" data-key="dq">Data Quality</a>
+      <a href="#consumption" data-key="cons">Konsumsi</a>
+      <a href="#tariff" data-key="tariff">Tarif</a>
+      <a href="#zone" data-key="zone">Zona</a>
+      <a href="#forecast" data-key="fc">Forecast</a>
+      <a href="#anomaly" data-key="anom">Anomali</a>
+      <a href="#report" data-key="report">Laporan</a>
+    </nav>
+    <div class="controls">
+      <label class="ctl" title="Replay tanggal (&quot;hari ini&quot;)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <input type="date" id="replay">
+      </label>
+      <label class="ctl" title="Peran pengguna">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        <select id="role">
+          <option>Facility Manager</option><option>Staf Teknis</option><option>Analis Data</option>
+          <option>Finance</option><option>Manajemen</option>
+        </select>
+      </label>
+      <button class="theme-btn" id="themeBtn" aria-label="Ganti mode gelap/terang">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============ 01 EXECUTIVE ============ -->
+    <section id="exec" class="section hero" data-key="exec">
+      <div class="hero-head">
+        <p class="eyebrow"><span class="dot live"></span> Decision support harian · human-in-the-loop</p>
+        <h1 class="hero-title"><span class="split">Hotel Energy</span><br><span class="split grad">Command Board</span></h1>
+        <p class="hero-sub">Data readiness → ekspektasi → deviasi → prioritas investigasi → keputusan. Dibangun dari
+          <b id="fileName">DATA_170225.csv</b> — 910 hari konsumsi listrik hotel bintang lima di Jakarta.</p>
+        <div class="chips" id="heroChips"></div>
+      </div>
+      <div id="dayBanner"></div>
+      <div class="kpi-grid" id="kpis"></div>
+      <div class="banner glass reveal" id="nextDay"></div>
+      <div class="grid g-3-2">
+        <article class="card glass reveal">
+          <header class="card-h"><h3>Aktual vs forecast</h3><span class="muted">60 hari terakhir · interval 90%</span></header>
+          <div class="chart" id="chExec" data-h="340"></div>
+        </article>
+        <article class="card glass reveal">
+          <header class="card-h"><h3>Alert prioritas</h3><span class="muted">30 hari terakhir</span></header>
+          <div class="alert-list" id="execAlerts" data-lenis-prevent></div>
+          <div id="escalation"></div>
+        </article>
+      </div>
+      <h3 class="sub-h reveal">Bulan berjalan vs periode sama bulan lalu</h3>
+      <div class="mini-grid" id="monthCmp"></div>
+    </section>
+
+    <!-- ============ 02 DATA QUALITY ============ -->
+    <section id="quality" class="section" data-key="dq">
+      <div class="sec-head"><span class="sec-num">02</span><div><h2>Data Quality</h2>
+        <p>Quality gate menentukan apakah forecast dan rekomendasi boleh diterbitkan (G1).</p></div></div>
+      <div class="ring-grid" id="rings"></div>
+      <p class="caption reveal">Ambang gate: <b>ready ≥ 95</b> tanpa isu kritis yang belum diputuskan · <b>caution ≥ 85</b> · di bawahnya not-ready. Bobot tiap dimensi 25%.</p>
+      <div class="tabs reveal" data-tabs="dq">
+        <button class="on" data-tab="checks">Quality checks</button>
+        <button data-tab="flags">Baris bermasalah &amp; keputusan</button>
+        <button data-tab="recon">Rekonsiliasi total vs zona</button>
+        <button data-tab="ingest">Ingestion log</button>
+      </div>
+      <div class="tab-panels" data-panels="dq">
+        <div class="panel on" data-panel="checks">
+          <article class="card glass"><div class="table-wrap" id="checksTbl" data-lenis-prevent></div></article>
+          <article class="card glass">
+            <header class="card-h"><h3>Data mentah vs setelah quality decision</h3>
+              <label class="switch"><input type="checkbox" id="logToggle" checked><span></span> Skala log</label></header>
+            <div class="chart" id="chRawClean" data-h="320"></div>
+          </article>
+        </div>
+        <div class="panel" data-panel="flags">
+          <article class="card glass">
+            <p class="caption" id="flagsInfo"></p>
+            <div class="table-wrap tall" id="flagsTbl" data-lenis-prevent></div>
+            <div class="form-row" id="flagsForm"></div>
+          </article>
+        </div>
+        <div class="panel" data-panel="recon">
+          <article class="card glass">
+            <p class="caption">TOTAL_BUILDING_ELECTRICITY <b>tidak sama</b> dengan Zone A+B+C dan hampir tidak berkorelasi. Gap ditampilkan apa adanya (Bab 3.6) sampai satuan dan cakupan meter diverifikasi.</p>
+            <div class="chart" id="chRecon" data-h="300"></div>
+            <div class="mini-grid two" id="reconStats"></div>
+          </article>
+        </div>
+        <div class="panel" data-panel="ingest">
+          <article class="card glass"><div class="table-wrap" id="ingestTbl"></div><p class="caption" id="ingestNote"></p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 03 CONSUMPTION ============ -->
+    <section id="consumption" class="section" data-key="cons">
+      <div class="sec-head"><span class="sec-num">03</span><div><h2>Konsumsi &amp; Biaya</h2>
+        <p>Tren konsumsi dan biaya harian, dibaca bersama konteks kalender.</p></div></div>
+      <div class="toolbar reveal">
+        <div class="seg" id="consPeriod"></div>
+        <div class="chip-set" id="consCal"></div>
+      </div>
+      <div class="mini-grid" id="consKpi"></div>
+      <article class="card glass reveal"><header class="card-h"><h3>Konsumsi harian</h3><span class="muted">dengan rata-rata 7 hari &amp; hari libur</span></header>
+        <div class="chart" id="chCons" data-h="340"></div></article>
+      <div class="grid g-1-1">
+        <article class="card glass reveal"><header class="card-h"><h3>Biaya harian</h3><span class="muted">LWBP + WBP (Rp juta)</span></header>
+          <div class="chart" id="chCost" data-h="300"></div></article>
+        <article class="card glass reveal"><header class="card-h"><h3>Pola per hari</h3><span class="muted">distribusi konsumsi</span></header>
+          <div class="chart" id="chDow" data-h="300"></div></article>
+      </div>
+      <article class="card glass reveal"><header class="card-h"><h3>Ringkasan bulanan</h3><span class="muted">biaya total &amp; konsumsi rata-rata</span></header>
+        <div class="chart" id="chMonthly" data-h="320"></div></article>
+    </section>
+
+    <!-- ============ 04 TARIFF ============ -->
+    <section id="tariff" class="section" data-key="tariff">
+      <div class="sec-head"><span class="sec-num">04</span><div><h2>Tarif &amp; Energi Reaktif</h2>
+        <p>Komposisi WBP–LWBP, WBP share, KVARh, dan faktor daya indikatif.</p></div></div>
+      <div class="mini-grid five" id="tariffKpi"></div>
+      <p class="caption reveal">Tarif per unit konstan sepanjang dataset (cek K2), sehingga peluang efisiensi biaya berasal dari volume dan pergeseran beban WBP → LWBP.</p>
+      <article class="card glass reveal"><header class="card-h"><h3>LWBP vs WBP per bulan</h3><span class="muted">dengan WBP share</span></header>
+        <div class="chart" id="chTariffM" data-h="320"></div></article>
+      <div class="grid g-1-1">
+        <article class="card glass reveal"><header class="card-h"><h3>WBP share harian</h3><span class="muted">90 hari · titik = naik signifikan</span></header>
+          <div class="chart" id="chWbp" data-h="290"></div></article>
+        <article class="card glass reveal"><header class="card-h"><h3>KVARh &amp; faktor daya indikatif</h3><span class="muted">90 hari · batas 0,85</span></header>
+          <div class="chart" id="chKv" data-h="290"></div></article>
+      </div>
+      <p class="caption reveal">PF indikatif = kWh/√(kWh²+kVArh²) dari agregat harian. Sinyal untuk pemeriksaan kapasitor bank, bukan pengukuran faktor daya.</p>
+    </section>
+
+    <!-- ============ 05 ZONE ============ -->
+    <section id="zone" class="section" data-key="zone">
+      <div class="sec-head"><span class="sec-num">05</span><div><h2>Analisis Zona</h2>
+        <p>Kontribusi dan deviasi Zone A–C tanpa menebak identitas tenant.</p></div></div>
+      <div class="toolbar reveal"><div class="seg" id="zonePeriod"></div></div>
+      <div class="note glass reveal">Zone A–C adalah sub-meter dengan cakupan sendiri: jumlahnya <b>tidak</b> sama dengan total gedung. Kontribusi dihitung terhadap jumlah ketiga zona; deviasi dibandingkan dengan baseline 28 hari zona itu sendiri.</div>
+      <div class="mini-grid three" id="zoneKpi"></div>
+      <div class="grid g-3-2">
+        <article class="card glass reveal"><header class="card-h"><h3>Konsumsi harian per zona</h3></header>
+          <div class="chart" id="chZone" data-h="320"></div></article>
+        <article class="card glass reveal"><header class="card-h"><h3>Komposisi bulanan</h3></header>
+          <div class="chart" id="chZoneMix" data-h="320"></div></article>
+      </div>
+      <article class="card glass reveal"><header class="card-h"><h3>Peta deviasi zona</h3><span class="muted">robust z vs baseline 28 hari · 60 hari terakhir</span></header>
+        <div class="chart" id="chZoneHeat" data-h="220"></div></article>
+    </section>
+
+    <!-- ============ 06 FORECAST ============ -->
+    <section id="forecast" class="section" data-key="fc">
+      <div class="sec-head"><span class="sec-num">06</span><div><h2>Forecasting</h2>
+        <p>Perbandingan model dengan split kronologis; baseline wajib: seasonal naive (G2).</p></div></div>
+      <div class="banner glass reveal" id="fcBanner"></div>
+      <article class="card glass reveal"><header class="card-h"><h3>Perbandingan model</h3><span class="muted" id="fcSplit"></span></header>
+        <div class="table-wrap" id="fcTbl"></div>
+        <details class="more"><summary>Kandidat yang belum dijalankan pada MVP</summary><ul id="fcNotRun"></ul></details>
+      </article>
+      <article class="card glass reveal"><header class="card-h"><h3>Validation &amp; test</h3><div class="chip-set" id="fcModels"></div></header>
+        <div class="chart" id="chSplit" data-h="330"></div></article>
+      <article class="card glass reveal"><header class="card-h"><h3>Forecast operasional</h3><span class="muted">rolling-origin, refit tiap bulan · 120 hari</span></header>
+        <div class="chart" id="chRolling" data-h="310"></div>
+        <div class="mini-grid three" id="fcStats"></div></article>
+      <div class="grid g-1-1">
+        <article class="card glass reveal"><header class="card-h"><h3>Distribusi residual</h3><span class="muted">aktual − forecast</span></header>
+          <div class="chart" id="chResid" data-h="270"></div></article>
+        <article class="card glass reveal"><header class="card-h"><h3>Explainability (F12)</h3></header>
+          <div id="fcExplain"></div></article>
+      </div>
+    </section>
+
+    <!-- ============ 07 ANOMALY ============ -->
+    <section id="anomaly" class="section" data-key="anom">
+      <div class="sec-head"><span class="sec-num">07</span><div><h2>Anomali &amp; Rekomendasi</h2>
+        <p>Residual + konteks → severity, confidence, evidence → rekomendasi investigatif → keputusan manusia.</p></div></div>
+      <details class="card glass reveal more" id="thrBox">
+        <summary>Threshold &amp; uji sensitivitas</summary>
+        <div class="grid g-2-3 tight">
+          <div id="thrCtl"></div>
+          <div class="table-wrap" id="sensTbl"></div>
+        </div>
+      </details>
+      <div class="toolbar reveal wrap" id="anomFilters"></div>
+      <div class="grid g-2-3">
+        <article class="card glass reveal">
+          <header class="card-h"><h3 id="alertCount">Alert</h3></header>
+          <div class="alert-list tall" id="alertList" data-lenis-prevent></div>
+        </article>
+        <article class="card glass reveal" id="alertDetail"></article>
+      </div>
+    </section>
+
+    <!-- ============ 08 REPORT ============ -->
+    <section id="report" class="section" data-key="report">
+      <div class="sec-head"><span class="sec-num">08</span><div><h2>Laporan &amp; Decision Note</h2>
+        <p>Ringkasan mingguan/bulanan, action log tertutup (closed-loop), dan audit trail.</p></div></div>
+      <div class="tabs reveal" data-tabs="rep">
+        <button class="on" data-tab="actions">Action log</button>
+        <button data-tab="summary">Ringkasan &amp; ekspor</button>
+        <button data-tab="outcome">Outcome KPI</button>
+        <button data-tab="audit">Audit trail</button>
+      </div>
+      <div class="tab-panels" data-panels="rep">
+        <div class="panel on" data-panel="actions"><article class="card glass" id="actionsBox"></article></div>
+        <div class="panel" data-panel="summary"><article class="card glass" id="summaryBox"></article></div>
+        <div class="panel" data-panel="outcome"><article class="card glass" id="outcomeBox"></article></div>
+        <div class="panel" data-panel="audit"><article class="card glass" id="auditBox"></article></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p>Human-in-the-loop: sistem hanya merekomendasikan pemeriksaan. Tidak ada kontrol BAS/HVAC, data real-time, okupansi, maupun cuaca.</p>
+      <p class="muted" id="footMeta"></p>
+    </footer>
+  </main>
+
+  <div class="loader" id="loader"><div class="ring"></div><p>Menjalankan pipeline: quality gate → forecast → anomaly scoring…</p></div>
+  <div class="toasts" id="toasts"></div>
+
+  <script src="/static/vendor/gsap.min.js"></script>
+  <script src="/static/vendor/ScrollTrigger.min.js"></script>
+  <script src="/static/vendor/lenis.min.js"></script>
+  <script src="/static/vendor/motion.js"></script>
+  <script src="/static/vendor/echarts.min.js"></script>
+  <script src="/static/js/app.js?v=4"></script>
+</body>
+</html>

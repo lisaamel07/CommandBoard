@@ -1,0 +1,138 @@
+﻿==============================================================
+  HOTEL ENERGY COMMAND BOARD - CARA MENJALANKAN
+  Prototipe decision support konsumsi listrik harian hotel
+==============================================================
+
+ISI FOLDER
+----------
+  JALANKAN_WINDOWS.bat     -> klik dua kali untuk menjalankan (Windows)
+  jalankan_mac_linux.sh    -> untuk macOS / Linux
+  DATA_170225.csv          -> dataset (910 hari, Jan 2023 - Jun 2025)
+  command_board\           -> kode program (jangan dipindah/diubah namanya)
+      server.py            -> server web (FastAPI)
+      core\                -> quality gate, forecast, anomali, rekomendasi
+      web\                 -> tampilan (HTML, CSS, JavaScript + library lokal)
+      app.py, views\       -> versi Streamlit (opsional, lihat bagian akhir)
+
+PENTING: biarkan DATA_170225.csv tetap berada di sebelah folder
+command_board. Program membaca dataset dari lokasi itu.
+
+
+1. YANG PERLU DISIAPKAN (SEKALI SAJA)
+-------------------------------------
+  a. Python 3.10 atau lebih baru.
+     Unduh dari https://www.python.org/downloads/
+     WINDOWS: saat instalasi, CENTANG kotak "Add python.exe to PATH".
+  b. Koneksi internet untuk pertama kali menjalankan (memasang library
+     Python, sekitar 150 MB). Setelah itu aplikasi bisa jalan offline.
+  c. Browser modern: Chrome, Edge, atau Firefox versi terbaru.
+
+  Cek Python sudah terpasang: buka Command Prompt / Terminal, ketik
+      python --version
+  Harus muncul "Python 3.10.x" atau lebih tinggi.
+
+
+2. MENJALANKAN DI WINDOWS (CARA MUDAH)
+--------------------------------------
+  1) Ekstrak file zip ke folder biasa, misalnya Documents atau Desktop.
+     (Jangan dijalankan langsung dari dalam zip.)
+  2) Buka folder hasil ekstrak, klik dua kali JALANKAN_WINDOWS.bat
+     - Jika muncul "Windows protected your PC", klik "More info" lalu
+       "Run anyway".
+  3) Tunggu. Pertama kali akan memasang library (2-5 menit).
+  4) Browser terbuka otomatis ke  http://localhost:8600
+     Halaman memuat sebentar ("Menjalankan pipeline ...") lalu dashboard
+     tampil.
+  5) Untuk berhenti: tutup jendela hitam (Command Prompt) atau tekan Ctrl+C.
+
+  Menjalankan berikutnya cukup klik dua kali file .bat lagi (cepat,
+  library tidak dipasang ulang).
+
+
+3. MENJALANKAN DI macOS / LINUX
+-------------------------------
+  Buka Terminal di folder hasil ekstrak, lalu:
+      chmod +x jalankan_mac_linux.sh
+      ./jalankan_mac_linux.sh
+  Browser terbuka ke http://localhost:8600. Berhenti dengan Ctrl+C.
+
+
+4. CARA MANUAL (JIKA SKRIP TIDAK BISA DIPAKAI)
+----------------------------------------------
+  Buka Command Prompt / Terminal di folder hasil ekstrak:
+
+      python -m venv .venv
+      Windows      : .venv\Scripts\activate
+      macOS/Linux  : source .venv/bin/activate
+      pip install -r command_board/requirements-web.txt
+      python -m uvicorn server:app --app-dir command_board --port 8600
+
+  Lalu buka http://localhost:8600 di browser.
+
+
+5. CARA MEMAKAI DASHBOARD
+-------------------------
+  - Menu atas      : lompat ke 8 bagian (Executive, Data Quality, Konsumsi,
+                     Tarif, Zona, Forecast, Anomali, Laporan).
+  - Kalender       : "replay tanggal" - dashboard berperilaku seolah tanggal
+                     itu adalah "hari ini".
+  - Peran pengguna : menentukan bagian dan aksi yang tersedia:
+        Facility Manager : semua bagian; membuat & menutup decision note
+        Analis Data      : semua bagian; mengubah quality decision & threshold
+        Staf Teknis      : mengisi hasil validasi teknis
+        Finance          : Executive, Konsumsi, Tarif, Laporan (baca saja)
+        Manajemen        : Executive & Laporan (baca saja)
+  - Tombol matahari/bulan (kanan atas): mode terang / gelap.
+  - Klik alert di "Alert prioritas" untuk melihat evidence, Evidence Gate
+    G1-G6, rekomendasi, dan membuat decision note.
+  - Bagian Laporan: ekspor ringkasan, alert log, decision log (CSV) dan
+    decision note (Markdown).
+
+  Data keputusan disimpan di  command_board\data\command_board.sqlite
+  (dibuat otomatis). Untuk mengosongkan: bagian Laporan -> Audit trail ->
+  "Mode demo" -> Kosongkan log (peran Facility Manager / Analis Data),
+  atau hapus file .sqlite tersebut.
+
+
+6. MASALAH UMUM
+---------------
+  "Python ... tidak ditemukan" / "python is not recognized"
+      -> Pasang Python dari python.org dan centang "Add python.exe to PATH",
+         lalu tutup & buka lagi Command Prompt. Jika Windows membuka
+         Microsoft Store saat mengetik "python", matikan di
+         Settings > Apps > Advanced app settings > App execution aliases
+         (nonaktifkan python.exe dan python3.exe).
+
+  Gagal saat "Memasang library" (pip error / timeout)
+      -> Pastikan internet aktif (jaringan kampus/kantor kadang memblokir
+         pip; coba hotspot HP). Jalankan ulang file .bat.
+
+  "address already in use" / port 8600 dipakai
+      -> Aplikasi mungkin sudah berjalan di jendela lain; tutup dulu.
+         Atau ganti 8600 dengan 8700 di file .bat / perintah manual, lalu
+         buka http://localhost:8700
+
+  Halaman terbuka tapi kosong / "Gagal memuat data"
+      -> Pastikan DATA_170225.csv ada di sebelah folder command_board dan
+         jendela server masih terbuka. Tekan F5 untuk memuat ulang.
+
+  Halaman terbuka sebelum server siap ("This site can't be reached")
+      -> Tunggu beberapa detik lalu tekan F5.
+
+  Huruf tampil berbeda saat offline
+      -> Normal. Font diambil dari Google Fonts; tanpa internet browser
+         memakai font cadangan. Fungsi lain tetap berjalan.
+
+
+7. OPSIONAL: VERSI STREAMLIT (sesuai Bab 3.5 laporan)
+-----------------------------------------------------
+  Setelah langkah 2/3 pernah dijalankan sekali:
+      Windows     : .venv\Scripts\python -m pip install streamlit plotly
+                    .venv\Scripts\python -m streamlit run command_board\app.py
+      macOS/Linux : .venv/bin/python -m pip install streamlit plotly
+                    .venv/bin/python -m streamlit run command_board/app.py
+  Buka http://localhost:8501. Kedua versi memakai data & log yang sama.
+
+
+Catatan: sistem ini human-in-the-loop - hanya merekomendasikan pemeriksaan.
+Tidak ada kontrol BAS/HVAC, data real-time, okupansi, maupun cuaca.
